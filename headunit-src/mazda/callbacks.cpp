@@ -20,7 +20,7 @@ MazdaEventCallbacks::MazdaEventCallbacks(DBus::Connection& serviceBus, DBus::Con
     , audioFocus(AudioManagerClient::FocusType::NONE)
 {
     //no need to create/destroy this
-    audioOutput.reset(new AudioOutput("entertainmentMl"));
+    audioOutput.reset(new AudioOutput("androidautoMainAudio", "androidautoMainAudioVR"));
     audioMgrClient.reset(new AudioManagerClient(*this, serviceBus));
     videoMgrClient.reset(new VideoManagerClient(*this, hmiBus));
 }
@@ -160,7 +160,7 @@ void MazdaEventCallbacks::VideoFocusHappened(bool hasFocus, bool unrequested) {
 void MazdaEventCallbacks::AudioFocusHappend(AudioManagerClient::FocusType type) {
     printf("AudioFocusHappend(%i)\n", int(type));
     aa_diag_log("Mazda AudioFocusHappend callback type=%d previousAAFocus=%d",
-                int(type), int(audioFocus));
+                int(type), int(audioFocus.load()));
     audioFocus = type;
     HU::AudioFocusResponse response;
     switch(type) {
