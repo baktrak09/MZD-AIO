@@ -59,10 +59,34 @@ void AudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
 {
     audPacketCount++;
     audByteCount += len;
-    if (audPacketCount == 1 || (audPacketCount % 100) == 0)
+    if (audPacketCount == 1 || (audPacketCount % 100) == 0) {
         aa_diag_log("AUD RX packets=%llu bytes=%llu len=%d ts=%llu",
                     (unsigned long long)audPacketCount, (unsigned long long)audByteCount,
                     len, (unsigned long long)timestamp);
+
+        // Inspect the actual S16_LE media samples. Successful ALSA writes can still
+        // contain digital silence, so record peak amplitude and non-zero sample count.
+        unsigned int sampleCount = (len > 1) ? (unsigned int)(len / 2) : 0;
+        unsigned int nonZeroSamples = 0;
+        unsigned int peakAbs = 0;
+        unsigned long long sumAbs = 0;
+        for (unsigned int i = 0; i < sampleCount; ++i) {
+            unsigned int lo = (unsigned int)buf[i * 2];
+            unsigned int hi = (unsigned int)buf[i * 2 + 1];
+            int sample = (int)(lo | (hi << 8));
+            if (sample & 0x8000)
+                sample -= 0x10000;
+            unsigned int magnitude = (sample < 0) ? (unsigned int)(-sample) : (unsigned int)sample;
+            if (magnitude != 0)
+                ++nonZeroSamples;
+            if (magnitude > peakAbs)
+                peakAbs = magnitude;
+            sumAbs += magnitude;
+        }
+        unsigned int avgAbs = sampleCount ? (unsigned int)(sumAbs / sampleCount) : 0;
+        aa_diag_log("AUD CONTENT packets=%llu samples=%u nonzero=%u peak=%u avgabs=%u",
+                    (unsigned long long)audPacketCount, sampleCount, nonZeroSamples, peakAbs, avgAbs);
+    }
 
     if (aud_handle)
         MediaPacket(aud_handle, buf, len, "AUD");
