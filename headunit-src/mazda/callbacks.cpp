@@ -159,6 +159,8 @@ void MazdaEventCallbacks::VideoFocusHappened(bool hasFocus, bool unrequested) {
 
 void MazdaEventCallbacks::AudioFocusHappend(AudioManagerClient::FocusType type) {
     printf("AudioFocusHappend(%i)\n", int(type));
+    aa_diag_log("Mazda AudioFocusHappend callback type=%d previousAAFocus=%d",
+                int(type), int(audioFocus));
     audioFocus = type;
     HU::AudioFocusResponse response;
     switch(type) {
@@ -543,11 +545,16 @@ void AudioManagerClient::audioMgrRequestAudioFocus(FocusType type)
     json args = { { "sessionId", type == FocusType::TRANSIENT ? aaTransientSessionID : aaSessionID } };
     std::string result = Request("requestAudioFocus", args.dump());
     printf("requestAudioFocus(%s)\n%s\n", args.dump().c_str(), result.c_str());
+    aa_diag_log("Mazda requestAudioFocus response sessionId=%d type=%d response=%s",
+                type == FocusType::TRANSIENT ? aaTransientSessionID : aaSessionID,
+                int(type), result.c_str());
 }
 
 void AudioManagerClient::audioMgrReleaseAudioFocus()
 {
     printf("audioMgrReleaseAudioFocus()\n");
+    aa_diag_log("Mazda release audio focus current=%d previousSession=%d permanentSession=%d transientSession=%d",
+                int(currentFocus), previousSessionID, aaSessionID, aaTransientSessionID);
     if (currentFocus == FocusType::NONE)
     {
         //nothing to do
@@ -580,12 +587,16 @@ void AudioManagerClient::Notify(const std::string &signalName, const std::string
     printf("AudioManagerClient::Notify signalName=%s payload=%s\n", signalName.c_str(), payload.c_str());
     if (signalName == "audioFocusChangeEvent")
     {
+        aa_diag_log("Mazda audioFocusChangeEvent raw=%s", payload.c_str());
         try
         {
             auto result = json::parse(payload);
             std::string streamName = result["streamName"].get<std::string>();
             std::string newFocus = result["newFocus"].get<std::string>();
             std::string focusType = result["focusType"].get<std::string>();
+            aa_diag_log("Mazda focus event stream=%s newFocus=%s focusType=%s current=%d waitingLost=%d",
+                        streamName.c_str(), newFocus.c_str(), focusType.c_str(),
+                        int(currentFocus), waitingForFocusLostEvent ? 1 : 0);
 
             int eventSessionID = -1;
             if (streamName == aaStreamName)
@@ -642,10 +653,19 @@ void AudioManagerClient::Notify(const std::string &signalName, const std::string
                     }
                 }
 
+                aa_diag_log("Mazda focus mapping stream=%s eventSession=%d permanentSession=%d transientSession=%d old=%d mapped=%d previousSession=%d waitingLost=%d",
+                            streamName.c_str(), eventSessionID, aaSessionID, aaTransientSessionID,
+                            int(currentFocus), int(newFocusType), previousSessionID,
+                            waitingForFocusLostEvent ? 1 : 0);
                 if (currentFocus != newFocusType)
                 {
                     currentFocus = newFocusType;
+                    aa_diag_log("Mazda focus state CHANGE new=%d", int(currentFocus));
                     callbacks.AudioFocusHappend(currentFocus);
+                }
+                else
+                {
+                    aa_diag_log("Mazda focus state unchanged=%d", int(currentFocus));
                 }
             }
         }
