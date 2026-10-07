@@ -18,11 +18,12 @@ void aa_diag_log(const char* fmt, ...)
     fclose(f);
 }
 
-AudioOutput::AudioOutput(const char *outDev)
+AudioOutput::AudioOutput(const char *outDev, const char *voiceDev)
 {
     FILE* diag = fopen(AA_DIAG_PATH, "w");
     if (diag) { fprintf(diag, "=== Android Auto audio diagnostic log ===\n"); fclose(diag); }
-    aa_diag_log("AudioOutput ctor device=%s ALSA=%s", outDev, snd_asoundlib_version());
+    const char* speechDev = voiceDev ? voiceDev : outDev;
+    aa_diag_log("AudioOutput ctor media=%s speech=%s ALSA=%s", outDev, speechDev, snd_asoundlib_version());
     printf("snd_asoundlib_version: %s\n", snd_asoundlib_version());
     logd("Device name %s\n", outDev);
     int err = 0;
@@ -37,7 +38,7 @@ AudioOutput::AudioOutput(const char *outDev)
         loge("snd_pcm_prepare error: %s\n", snd_strerror(err));
     }
 
-    if ((err = snd_pcm_open(&au1_handle, outDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+    if ((err = snd_pcm_open(&au1_handle, speechDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         loge("Playback open error: %s\n", snd_strerror(err));
     }
     if ((err = snd_pcm_set_params(au1_handle, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 16000, 1, 1000000)) < 0) {   /* 1.0sec */
