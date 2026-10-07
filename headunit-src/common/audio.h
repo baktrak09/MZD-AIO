@@ -8,6 +8,8 @@
 #include "hu_uti.h"
 #include "hu_aap.h"
 
+void aa_diag_log(const char* fmt, ...);
+
 class AudioOutput
 {
     snd_pcm_t* aud_handle = nullptr;
