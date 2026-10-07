@@ -13,7 +13,11 @@ class AudioOutput
     snd_pcm_t* aud_handle = nullptr;
     snd_pcm_t* au1_handle = nullptr;
 
-    void MediaPacket(snd_pcm_t* pcm, const byte * buf, int len);
+    snd_pcm_sframes_t MediaPacket(snd_pcm_t* pcm, const byte * buf, int len, const char* streamName);
+    uint64_t audPacketCount = 0;
+    uint64_t audByteCount = 0;
+    uint64_t au1PacketCount = 0;
+    uint64_t au1ByteCount = 0;
 public:
     AudioOutput(const char* outDev = "default");
     ~AudioOutput();
