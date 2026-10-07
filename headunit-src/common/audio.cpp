@@ -1,7 +1,28 @@
 #include "audio.h"
+#include <stdarg.h>
+#include <time.h>
+
+static const char* AA_DIAG_PATH = "/data/aa-audio-diag.log";
+
+void aa_diag_log(const char* fmt, ...)
+{
+    FILE* f = fopen(AA_DIAG_PATH, "a");
+    if (!f) return;
+    time_t now = time(NULL);
+    fprintf(f, "[AA_DIAG %ld] ", (long)now);
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(f, fmt, args);
+    va_end(args);
+    fprintf(f, "\n");
+    fclose(f);
+}
 
 AudioOutput::AudioOutput(const char *outDev)
 {
+    FILE* diag = fopen(AA_DIAG_PATH, "w");
+    if (diag) { fprintf(diag, "=== Android Auto audio diagnostic log ===\n"); fclose(diag); }
+    aa_diag_log("AudioOutput ctor device=%s ALSA=%s", outDev, snd_asoundlib_version());
     printf("snd_asoundlib_version: %s\n", snd_asoundlib_version());
     logd("Device name %s\n", outDev);
     int err = 0;
