@@ -523,6 +523,8 @@ void AudioManagerClient::audioMgrRequestAudioFocus(FocusType type)
         return;
     }
     printf("audioMgrRequestAudioFocus(%i)\n", int(type));
+    aa_diag_log("Mazda request audio focus: type=%d permanentSession=%d transientSession=%d current=%d",
+                int(type), aaSessionID, aaTransientSessionID, int(currentFocus));
     if (currentFocus == type)
     {
         callbacks.AudioFocusHappend(currentFocus);
