@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <time.h>
 
-static const char* AA_DIAG_PATH = "/data/aa-audio-diag.log";
+static const char* AA_DIAG_PATH = "/tmp/aa-audio-diag.log";
 
 void aa_diag_log(const char* fmt, ...)
 {
