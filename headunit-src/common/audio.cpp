@@ -57,36 +57,79 @@ AudioOutput::~AudioOutput()
 
 void AudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
 {
-    //Do we need the timestamp?
+    audPacketCount++;
+    audByteCount += len;
+    if (audPacketCount == 1 || (audPacketCount % 100) == 0)
+        aa_diag_log("AUD RX packets=%llu bytes=%llu len=%d ts=%llu",
+                    (unsigned long long)audPacketCount, (unsigned long long)audByteCount,
+                    len, (unsigned long long)timestamp);
+
     if (aud_handle)
-    {
-        MediaPacket(aud_handle, buf, len);
-    }
+        MediaPacket(aud_handle, buf, len, "AUD");
+    else if (audPacketCount == 1)
+        aa_diag_log("AUD RX but handle NULL");
 }
 
 void AudioOutput::MediaPacketAU1(uint64_t timestamp, const byte *buf, int len)
 {
+    au1PacketCount++;
+    au1ByteCount += len;
+    if (au1PacketCount == 1 || (au1PacketCount % 100) == 0)
+        aa_diag_log("AU1 RX packets=%llu bytes=%llu len=%d ts=%llu",
+                    (unsigned long long)au1PacketCount, (unsigned long long)au1ByteCount,
+                    len, (unsigned long long)timestamp);
+
     if (au1_handle)
-    {
-        MediaPacket(au1_handle, buf, len);
-    }
+        MediaPacket(au1_handle, buf, len, "AU1");
+    else if (au1PacketCount == 1)
+        aa_diag_log("AU1 RX but handle NULL");
 }
 
-void AudioOutput::MediaPacket(snd_pcm_t *pcm, const byte *buf, int len)
+snd_pcm_sframes_t AudioOutput::MediaPacket(snd_pcm_t *pcm, const byte *buf, int len, const char* streamName)
 {
     snd_pcm_sframes_t framecount = snd_pcm_bytes_to_frames(pcm, len);
     snd_pcm_sframes_t frames = snd_pcm_writei(pcm, buf, framecount);
+
     if (frames < 0) {
+        aa_diag_log("%s write FAILED requested=%ld result=%ld error=%s state=%s",
+                    streamName, (long)framecount, (long)frames, snd_strerror(frames),
+                    snd_pcm_state_name(snd_pcm_state(pcm)));
+
         frames = snd_pcm_recover(pcm, frames, 1);
         if (frames < 0) {
             loge("snd_pcm_recover failed: %s\n", snd_strerror(frames));
+            aa_diag_log("%s recover FAILED result=%ld error=%s",
+                        streamName, (long)frames, snd_strerror(frames));
         } else {
             frames = snd_pcm_writei(pcm, buf, framecount);
+            aa_diag_log("%s retry write result=%ld requested=%ld",
+                        streamName, (long)frames, (long)framecount);
         }
     }
+
     if (frames >= 0 && frames < framecount) {
         loge("Short write (expected %i, wrote %i)\n", (int)framecount, (int)frames);
+        aa_diag_log("%s SHORT WRITE requested=%ld wrote=%ld",
+                    streamName, (long)framecount, (long)frames);
     }
+
+    uint64_t packetCount = (streamName[2] == 'D') ? audPacketCount : au1PacketCount;
+    if (packetCount == 1 || (packetCount % 100) == 0) {
+        snd_pcm_sframes_t delay = 0;
+        snd_pcm_sframes_t avail = snd_pcm_avail_update(pcm);
+        int delayResult = snd_pcm_delay(pcm, &delay);
+        aa_diag_log("%s PCM packets=%llu requested=%ld wrote=%ld state=%s avail=%ld delay=%ld delay_rc=%d",
+                    streamName,
+                    (unsigned long long)packetCount,
+                    (long)framecount,
+                    (long)frames,
+                    snd_pcm_state_name(snd_pcm_state(pcm)),
+                    (long)avail,
+                    (long)delay,
+                    delayResult);
+    }
+
+    return frames;
 }
 
 snd_pcm_sframes_t MicInput::read_mic_cancelable(snd_pcm_t* mic_handle, void *buffer, snd_pcm_uframes_t size, bool* canceled)
