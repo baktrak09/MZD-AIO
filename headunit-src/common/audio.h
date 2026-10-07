@@ -21,7 +21,7 @@ class AudioOutput
     uint64_t au1PacketCount = 0;
     uint64_t au1ByteCount = 0;
 public:
-    AudioOutput(const char* outDev = "default");
+    AudioOutput(const char* outDev = "default", const char* voiceDev = nullptr);
     ~AudioOutput();
 
     void MediaPacketAUD(uint64_t timestamp, const byte * buf, int len);
