@@ -71,7 +71,8 @@ public:
     };
 private:
     std::map<std::string, int> streamToSessionIds;
-    std::string aaStreamName = "MLENT";
+    // Experimental factory Android Auto stream; verify against CMU audio manager logs.
+    std::string aaStreamName = "AAUTO";
     int aaSessionID = -1;
     int aaTransientSessionID = -1;
     int previousSessionID = -1;
