@@ -349,7 +349,7 @@ void AudioManagerClient::aaRegisterStream()
             std::string sessString = Request("openSession", sessArgs.dump());
             printf("openSession(%s)\n%s\n", sessArgs.dump().c_str(), sessString.c_str());
             aaSessionID = json::parse(sessString)["sessionId"];
-            aa_diag_log("MLENT permanent openSession sessionId=%d response=%s", aaSessionID, sessString.c_str());
+            aa_diag_log("AAUTO permanent openSession sessionId=%d response=%s", aaSessionID, sessString.c_str());
 
             // Register the stream
             json regArgs = {
@@ -361,7 +361,7 @@ void AudioManagerClient::aaRegisterStream()
             };
             std::string regString = Request("registerAudioStream", regArgs.dump());
             printf("registerAudioStream(%s)\n%s\n", regArgs.dump().c_str(), regString.c_str());
-            aa_diag_log("MLENT permanent register response=%s", regString.c_str());
+            aa_diag_log("AAUTO permanent register response=%s", regString.c_str());
         }
         catch (const std::domain_error& ex)
         {
@@ -383,7 +383,7 @@ void AudioManagerClient::aaRegisterStream()
             std::string sessString = Request("openSession", sessArgs.dump());
             printf("openSession(%s)\n%s\n", sessArgs.dump().c_str(), sessString.c_str());
             aaTransientSessionID = json::parse(sessString)["sessionId"];
-            aa_diag_log("MLENT transient openSession sessionId=%d response=%s", aaTransientSessionID, sessString.c_str());
+            aa_diag_log("AAUTO transient openSession sessionId=%d response=%s", aaTransientSessionID, sessString.c_str());
 
             // Register the stream
             json regArgs = {
@@ -395,7 +395,7 @@ void AudioManagerClient::aaRegisterStream()
             };
             std::string regString = Request("registerAudioStream", regArgs.dump());
             printf("registerAudioStream(%s)\n%s\n", regArgs.dump().c_str(), regString.c_str());
-            aa_diag_log("MLENT transient register response=%s", regString.c_str());
+            aa_diag_log("AAUTO transient register response=%s", regString.c_str());
         }
         catch (const std::domain_error& ex)
         {
@@ -457,16 +457,14 @@ void AudioManagerClient::populateStreamTable()
             }
 
             printf("Found stream %s session id %i\n", streamName.c_str(), sessionId);
-            if(streamName == aaStreamName)
+            if (streamName == aaStreamName)
             {
-                if (aaSessionID < 0)
-                    aaSessionID = sessionId;
-                else
-                    aaTransientSessionID = sessionId;
+                // Factory Android Auto may already own a session with this name.
+                // Do not adopt or later close sessions belonging to another app.
+                aa_diag_log("Existing AA stream session=%d ignored (not ours)", sessionId);
             }
             else
             {
-                //We have two so this doesn't work
                 streamToSessionIds[streamName] = sessionId;
             }
         }
