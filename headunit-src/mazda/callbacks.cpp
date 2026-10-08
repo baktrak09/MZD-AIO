@@ -627,7 +627,8 @@ void AudioManagerClient::Notify(const std::string &signalName, const std::string
 
             if (eventSessionID >= 0)
             {
-                if (waitingForFocusLostEvent && newFocus == "lost")
+                if (waitingForFocusLostEvent && newFocus == "lost" &&
+                    eventSessionID != aaSessionID && eventSessionID != aaTransientSessionID)
                 {
                     previousSessionID = eventSessionID;
                     waitingForFocusLostEvent = false;
