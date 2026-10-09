@@ -29,6 +29,9 @@ AudioOutput::AudioOutput(const char *outDev, const char *voiceDev)
     int err = 0;
     if ((err = snd_pcm_open(&aud_handle, outDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         loge("Playback open error: %s\n", snd_strerror(err));
+        aa_diag_log("AUD open FAILED err=%s", snd_strerror(err));
+        aud_handle = nullptr;
+        return;
     }
     if ((err = snd_pcm_set_params(aud_handle, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 2,48000, 1, 1000000)) < 0) {   /* 1.0sec */
         loge("Playback open error: %s\n", snd_strerror(err));
@@ -40,6 +43,9 @@ AudioOutput::AudioOutput(const char *outDev, const char *voiceDev)
 
     if ((err = snd_pcm_open(&au1_handle, speechDev, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
         loge("Playback open error: %s\n", snd_strerror(err));
+        aa_diag_log("AU1 open FAILED err=%s", snd_strerror(err));
+        au1_handle = nullptr;
+        return;
     }
     if ((err = snd_pcm_set_params(au1_handle, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 16000, 1, 1000000)) < 0) {   /* 1.0sec */
         loge("Playback open error: %s\n", snd_strerror(err));
@@ -52,8 +58,8 @@ AudioOutput::AudioOutput(const char *outDev, const char *voiceDev)
 
 AudioOutput::~AudioOutput()
 {
-    snd_pcm_close(aud_handle);
-    snd_pcm_close(au1_handle);
+    if (aud_handle) snd_pcm_close(aud_handle);
+    if (au1_handle) snd_pcm_close(au1_handle);
 }
 
 void AudioOutput::MediaPacketAUD(uint64_t timestamp, const byte *buf, int len)
