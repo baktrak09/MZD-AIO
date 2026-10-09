@@ -235,6 +235,12 @@ void VideoManagerClient::requestVideoFocus(VIDEO_FOCUS_REQUESTOR requestor)
 void VideoManagerClient::releaseVideoFocus(VIDEO_FOCUS_REQUESTOR requestor)
 {
     if (!callbacks.videoFocus) {
+        // A stale focus flag must not prevent restoring the Mazda Opera surface.
+        // Never override the backup-camera surface.
+        if (requestor != VIDEO_FOCUS_REQUESTOR::BACKUP_CAMERA && allowedToGetFocus) {
+            logd("Video focus already false; restoring JCI_OPERA_PRIMARY");
+            guiClient.SetRequiredSurfacesByEnum({NativeGUICtrlClient::JCI_OPERA_PRIMARY}, true);
+        }
         return;
     }
     bool unrequested = requestor != VIDEO_FOCUS_REQUESTOR::ANDROID_AUTO;
