@@ -372,8 +372,8 @@ void AudioManagerClient::aaRegisterStream()
             loge("Failed to parse state json: %s", ex.what());
         }
 
-        // Stream is registered add it to the array
-        streamToSessionIds[aaStreamName] = aaSessionID;
+        // Keep AA permanent/transient session IDs separate from the map of other Mazda streams.
+        aa_diag_log("AAUTO permanent session id=%d", aaSessionID);
     }
 
     if (aaTransientSessionID < 0)
@@ -406,8 +406,7 @@ void AudioManagerClient::aaRegisterStream()
             loge("Failed to parse state json: %s", ex.what());
         }
 
-        // Stream is registered add it to the array
-        streamToSessionIds[aaStreamName] = aaTransientSessionID;
+        aa_diag_log("AAUTO transient session id=%d", aaTransientSessionID);
     }
 
 
