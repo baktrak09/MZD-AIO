@@ -545,6 +545,12 @@ void AudioManagerClient::audioMgrRequestAudioFocus(FocusType type)
         waitingForFocusLostEvent = true;
         previousSessionID = -1;
     }
+    const int requestedSession = type == FocusType::TRANSIENT ? aaTransientSessionID : aaSessionID;
+    if (requestedSession < 0) {
+        aa_diag_log("AAUTO focus request blocked: unregistered session type=%d", int(type));
+        callbacks.AudioFocusHappend(FocusType::NONE);
+        return;
+    }
     json args = { { "sessionId", type == FocusType::TRANSIENT ? aaTransientSessionID : aaSessionID } };
     std::string result = Request("requestAudioFocus", args.dump());
     printf("requestAudioFocus(%s)\n%s\n", args.dump().c_str(), result.c_str());
