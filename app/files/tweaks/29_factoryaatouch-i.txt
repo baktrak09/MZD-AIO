@@ -11,6 +11,17 @@ case "$FAA_VERSION" in
   *70.00.335C*) ;;
   *) log_message "ERROR: Firmware $FAA_VERSION is not 70.00.335C"; show_message "WRONG FIRMWARE: FACTORY AA TOUCH NOT INSTALLED"; exit 1 ;;
 esac
+# Reject unexpected or corrupted builds before modifying the CMU.
+FAA_EXPECTED_SHA256=46f96c6a38fa54db5b0ace81895feadcb672ae5708a7561f7a5eb2ce8b6be777
+if command -v sha256sum >/dev/null 2>&1; then
+  FAA_ACTUAL_SHA256=$(sha256sum "$FAA_SOURCE" 2>/dev/null | awk '{print $1}')
+  if [ "$FAA_ACTUAL_SHA256" != "$FAA_EXPECTED_SHA256" ]; then
+    log_message "ERROR: Factory touch library checksum mismatch"
+    exit 1
+  fi
+else
+  log_message "WARNING: sha256sum unavailable; using post-copy comparison only"
+fi
 if [ ! -s "$FAA_SOURCE" ] || [ ! -f "$FAA_TARGET" ] || [ -L "$FAA_TARGET" ]; then
   log_message "ERROR: Touch payload missing or sm.conf unsupported"
   exit 1
