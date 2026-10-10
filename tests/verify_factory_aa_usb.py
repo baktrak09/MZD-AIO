@@ -35,7 +35,6 @@ def verify(destination, uninstall=False):
     script = destination / "tweaks.sh"
     subprocess.run(["sh", "-n", str(script)], check=True)
     text = script.read_text()
-    assert "29_factoryaatouch" not in text or True  # script content is inlined
     assert 'FAA_TARGET=/jci/sm/sm.conf' in text
     assert 'LD_PRELOAD' in text
     assert 'headunit-wrapper &' not in text
