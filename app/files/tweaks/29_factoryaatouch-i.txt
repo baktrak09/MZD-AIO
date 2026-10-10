@@ -29,7 +29,7 @@ mkdir -p "$FAA_ROOT" || exit 1
 FAA_NEW="$FAA_ROOT/sm.conf.new"
 # Scope insertion to the jciAAPA service only; refuse existing preloads.
 awk '
-/<service[[:space:]>]/ { opening=1; tag="" }
+/<service([[:space:]>]|$)/ { opening=1; tag="" }
 opening { tag=tag " " $0; if (/>/) { opening=0; if (tag ~ /name="jciAAPA"/) { found++; inside=1 } } }
 inside && /env_name="LD_PRELOAD"/ { bad=1; exit 1 }
 inside && /<\/service>/ { print "    <environ_var env_name=\"LD_PRELOAD\" env_value=\"/data_persist/mazda-touch/libmazda_touch.so\"/>"; inside=0 }
