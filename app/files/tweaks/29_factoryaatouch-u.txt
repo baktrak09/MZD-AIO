@@ -1,0 +1,16 @@
+# Remove only the factory AA touchscreen preload, preserving other tweaks.
+show_message "REMOVE FACTORY ANDROID AUTO TOUCH ..."
+log_message "=== Factory AA touchscreen-only preload: uninstall ==="
+FAA_TARGET=/jci/sm/sm.conf
+FAA_ROOT=/tmp/mnt/data_persist/mazda-touch
+FAA_MATCH='env_name="LD_PRELOAD" env_value="/data_persist/mazda-touch/libmazda_touch.so"'
+[ -f "$FAA_TARGET" ] && [ ! -L "$FAA_TARGET" ] || { log_message "ERROR: sm.conf missing or symlink"; exit 1; }
+[ -s "$FAA_ROOT/sm.conf.original" ] || { log_message "ERROR: Original sm.conf backup missing"; exit 1; }
+FAA_COUNT=$(grep -Fc "$FAA_MATCH" "$FAA_TARGET")
+[ "$FAA_COUNT" -eq 1 ] || { log_message "ERROR: Expected exactly one factory touch preload"; exit 1; }
+FAA_STAGE="${FAA_TARGET}.factory-aa-touch-restore"
+cp -p "$FAA_TARGET" "$FAA_STAGE" || exit 1
+grep -Fv "$FAA_MATCH" "$FAA_TARGET" > "$FAA_STAGE" || { rm -f "$FAA_STAGE"; exit 1; }
+mv "$FAA_STAGE" "$FAA_TARGET" || exit 1
+sync
+log_message "=== Factory AA touchscreen preload removed; reboot required ==="
