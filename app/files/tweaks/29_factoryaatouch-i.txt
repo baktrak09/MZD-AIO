@@ -1,0 +1,42 @@
+# Factory Android Auto touchscreen-only preload, FW 70.00.335C
+# Separate from the MZD-AIO Android Auto Headunit App.
+show_message "INSTALL FACTORY ANDROID AUTO TOUCH (EXPERIMENTAL) ..."
+log_message "=== Factory AA touchscreen-only preload: install ==="
+FAA_TARGET=/jci/sm/sm.conf
+FAA_ROOT=/tmp/mnt/data_persist/mazda-touch
+FAA_SOURCE="${MYDIR}/config/factory-aa-touch/libmazda_touch.so"
+FAA_ENTRY='    <environ_var env_name="LD_PRELOAD" env_value="/data_persist/mazda-touch/libmazda_touch.so"/>'
+FAA_VERSION=$(get_cmu_sw_version)
+case "$FAA_VERSION" in
+  *70.00.335C*) ;;
+  *) log_message "ERROR: Firmware $FAA_VERSION is not 70.00.335C"; show_message "WRONG FIRMWARE: FACTORY AA TOUCH NOT INSTALLED"; exit 1 ;;
+esac
+if [ ! -s "$FAA_SOURCE" ] || [ ! -f "$FAA_TARGET" ] || [ -L "$FAA_TARGET" ]; then
+  log_message "ERROR: Touch payload missing or sm.conf unsupported"
+  exit 1
+fi
+if [ -e "$FAA_ROOT/sm.conf.original" ] || grep -Fq '/data_persist/mazda-touch/libmazda_touch.so' "$FAA_TARGET"; then
+  log_message "ERROR: Touch patch already installed or backup exists"
+  exit 1
+fi
+mkdir -p "$FAA_ROOT" || exit 1
+FAA_NEW="$FAA_ROOT/sm.conf.new"
+# Scope insertion to the jciAAPA service only; refuse existing preloads.
+awk '
+/<service[[:space:]>]/ { opening=1; tag="" }
+opening { tag=tag " " $0; if (/>/) { opening=0; if (tag ~ /name="jciAAPA"/) { found++; inside=1 } } }
+inside && /env_name="LD_PRELOAD"/ { bad=1; exit 1 }
+inside && /<\/service>/ { print "    <environ_var env_name=\"LD_PRELOAD\" env_value=\"/data_persist/mazda-touch/libmazda_touch.so\"/>"; inside=0 }
+{ print }
+END { if (bad || found != 1 || inside || opening) exit 1 }
+' "$FAA_TARGET" > "$FAA_NEW" || { rm -f "$FAA_NEW"; log_message "ERROR: Cannot patch jciAAPA"; exit 1; }
+cp -p "$FAA_TARGET" "$FAA_ROOT/sm.conf.original" || exit 1
+cmp -s "$FAA_TARGET" "$FAA_ROOT/sm.conf.original" || exit 1
+cp "$FAA_SOURCE" "$FAA_ROOT/libmazda_touch.so" || exit 1
+chmod 644 "$FAA_ROOT/libmazda_touch.so"
+FAA_STAGE="${FAA_TARGET}.factory-aa-touch-new"
+cp -p "$FAA_TARGET" "$FAA_STAGE" || exit 1
+cat "$FAA_NEW" > "$FAA_STAGE" || exit 1
+mv "$FAA_STAGE" "$FAA_TARGET" || exit 1
+sync
+log_message "=== Factory AA touchscreen preload installed; reboot required ==="
