@@ -15,8 +15,14 @@ if [ ! -s "$FAA_SOURCE" ] || [ ! -f "$FAA_TARGET" ] || [ -L "$FAA_TARGET" ]; the
   log_message "ERROR: Touch payload missing or sm.conf unsupported"
   exit 1
 fi
-if [ -e "$FAA_ROOT/sm.conf.original" ] || grep -Fq '/data_persist/mazda-touch/libmazda_touch.so' "$FAA_TARGET"; then
-  log_message "ERROR: Touch patch already installed or backup exists"
+if grep -Fq '/data_persist/mazda-touch/libmazda_touch.so' "$FAA_TARGET"; then
+  log_message "ERROR: Factory touch patch already installed"
+  exit 1
+fi
+# Reinstallation after a successful uninstall is permitted only when the
+# existing backup exactly matches the current, unmodified configuration.
+if [ -e "$FAA_ROOT/sm.conf.original" ] && ! cmp -s "$FAA_TARGET" "$FAA_ROOT/sm.conf.original"; then
+  log_message "ERROR: Existing sm.conf backup differs; refusing to overwrite"
   exit 1
 fi
 mkdir -p "$FAA_ROOT" || exit 1
@@ -30,9 +36,12 @@ inside && /<\/service>/ { print "    <environ_var env_name=\"LD_PRELOAD\" env_va
 { print }
 END { if (bad || found != 1 || inside || opening) exit 1 }
 ' "$FAA_TARGET" > "$FAA_NEW" || { rm -f "$FAA_NEW"; log_message "ERROR: Cannot patch jciAAPA"; exit 1; }
-cp -p "$FAA_TARGET" "$FAA_ROOT/sm.conf.original" || exit 1
+if [ ! -e "$FAA_ROOT/sm.conf.original" ]; then
+  cp -p "$FAA_TARGET" "$FAA_ROOT/sm.conf.original" || exit 1
+fi
 cmp -s "$FAA_TARGET" "$FAA_ROOT/sm.conf.original" || exit 1
 cp "$FAA_SOURCE" "$FAA_ROOT/libmazda_touch.so" || exit 1
+cmp -s "$FAA_SOURCE" "$FAA_ROOT/libmazda_touch.so" || { log_message "ERROR: Library copy failed integrity check"; exit 1; }
 chmod 644 "$FAA_ROOT/libmazda_touch.so"
 FAA_STAGE="${FAA_TARGET}.factory-aa-touch-new"
 cp -p "$FAA_TARGET" "$FAA_STAGE" || exit 1
