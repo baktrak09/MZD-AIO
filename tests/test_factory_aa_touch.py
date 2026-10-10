@@ -74,7 +74,7 @@ class FactoryTouchTests(unittest.TestCase):
             # An unrelated existing preload in jciAAPA must be preserved.
             target.write_text(original.replace(
                 '  <environ_var env_name="EXISTING"',
-                '  <environ_var env_name="LD_PRELOAD" env_value="/another.so"/>\\n'
+                '  <environ_var env_name="LD_PRELOAD" env_value="/another.so"/>\n'
                 '  <environ_var env_name="EXISTING"'))
             self.assertNotEqual(run(install).returncode, 0)
             self.assertIn('/another.so', target.read_text())
