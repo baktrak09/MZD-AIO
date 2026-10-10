@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m unittest discover -s tests -p test_factory_aa_touch.py -v
+      - run: node --check app/assets/js/build-tweaks.js
+      - run: node --check app/controllers/home.js
       - run: python tests/verify_factory_aa_usb.py
       - run: sh -n app/files/tweaks/29_factoryaatouch-i.txt
       - run: sh -n app/files/tweaks/29_factoryaatouch-u.txt
