@@ -11,6 +11,11 @@ FAA_COUNT=$(grep -Fc "$FAA_MATCH" "$FAA_TARGET")
 FAA_STAGE="${FAA_TARGET}.factory-aa-touch-restore"
 cp -p "$FAA_TARGET" "$FAA_STAGE" || exit 1
 grep -Fv "$FAA_MATCH" "$FAA_TARGET" > "$FAA_STAGE" || { rm -f "$FAA_STAGE"; exit 1; }
-mv "$FAA_STAGE" "$FAA_TARGET" || exit 1
+if ! cmp -s "$FAA_STAGE" "$FAA_ROOT/sm.conf.original"; then
+  rm -f "$FAA_STAGE"
+  log_message "ERROR: Removing preload would not restore original sm.conf; refusing automatic removal"
+  exit 1
+fi
+mv "$FAA_STAGE" "$FAA_TARGET" || { rm -f "$FAA_STAGE"; exit 1; }
 sync
 log_message "=== Factory AA touchscreen preload removed; reboot required ==="
