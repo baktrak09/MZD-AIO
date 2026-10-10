@@ -1,0 +1,21 @@
+name: Factory AA Touch Smoke Tests
+on:
+  push:
+    branches: [factory-aa-touch-fw70]
+  pull_request:
+    paths:
+      - 'app/files/tweaks/29_factoryaatouch-*.txt'
+      - 'app/files/tweaks/factory-aa-touch/**'
+      - 'app/assets/js/build-tweaks.js'
+      - 'tests/test_factory_aa_touch.py'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests -p test_factory_aa_touch.py -v
+      - run: sh -n app/files/tweaks/29_factoryaatouch-i.txt
+      - run: sh -n app/files/tweaks/29_factoryaatouch-u.txt
