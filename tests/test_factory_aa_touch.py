@@ -67,6 +67,17 @@ class FactoryTouchTests(unittest.TestCase):
             result = run(install)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(target.read_text().count("LD_PRELOAD"), 1)
+            # A second removal must not silently rewrite the configuration.
+            self.assertEqual(run(uninstall).returncode, 0)
+            self.assertEqual(target.read_text(), original)
+            self.assertNotEqual(run(uninstall).returncode, 0)
+            # An unrelated existing preload in jciAAPA must be preserved.
+            target.write_text(original.replace(
+                '  <environ_var env_name="EXISTING"',
+                '  <environ_var env_name="LD_PRELOAD" env_value="/another.so"/>\\n'
+                '  <environ_var env_name="EXISTING"'))
+            self.assertNotEqual(run(install).returncode, 0)
+            self.assertIn('/another.so', target.read_text())
 
     def test_refuse_existing_preload(self):
         script = (TWEAKS / "29_factoryaatouch-i.txt").read_text()
