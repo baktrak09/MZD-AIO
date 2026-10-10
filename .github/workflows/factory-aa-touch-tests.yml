@@ -19,6 +19,11 @@ jobs:
       - run: python -m unittest discover -s tests -p test_factory_aa_touch.py -v
       - run: node --check app/assets/js/build-tweaks.js
       - run: node --check app/controllers/home.js
-      - run: python tests/verify_factory_aa_usb.py
+      - run: python tests/verify_factory_aa_usb.py --output factory-aa-touch-usb-preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: factory-aa-touch-usb-preview
+          path: factory-aa-touch-usb-preview/
+          if-no-files-found: error
       - run: sh -n app/files/tweaks/29_factoryaatouch-i.txt
       - run: sh -n app/files/tweaks/29_factoryaatouch-u.txt
