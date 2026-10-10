@@ -334,6 +334,9 @@ function buildTweak (user) {
   if (user.options.includes(125)) {
     addTweak('25_androidauto-u.txt')
   }
+  if (user.options.includes(129)) {
+    addTweak('29_factoryaatouch-u.txt')
+  }
   if (user.options.includes(127)) {
     addTweak('27_aioapp-u.txt')
   }
@@ -516,6 +519,16 @@ function buildTweak (user) {
   if (user.options.includes(22)) {
     addTweak('22_fuel-i.txt')
     addTweakDir('FuelConsumptionTweak', true)
+  }
+  if (user.options.includes(29)) {
+    const factoryTouchSource = `${builddir}factory-aa-touch/libmazda_touch.so`
+    const factoryTouchDestination = `${tmpdir}/config/factory-aa-touch`
+    if (!fs.existsSync(factoryTouchSource)) {
+      throw new Error('Factory Android Auto touchscreen library is missing')
+    }
+    mkdirp.sync(factoryTouchDestination)
+    fs.copyFileSync(factoryTouchSource, `${factoryTouchDestination}/libmazda_touch.so`)
+    addTweak('29_factoryaatouch-i.txt')
   }
   if (user.options.includes(25)) {
     if (user.aaHUD) {
