@@ -56,7 +56,9 @@ cmp -s "$FAA_SOURCE" "$FAA_ROOT/libmazda_touch.so" || { log_message "ERROR: Libr
 chmod 644 "$FAA_ROOT/libmazda_touch.so"
 FAA_STAGE="${FAA_TARGET}.factory-aa-touch-new"
 cp -p "$FAA_TARGET" "$FAA_STAGE" || exit 1
-cat "$FAA_NEW" > "$FAA_STAGE" || exit 1
-mv "$FAA_STAGE" "$FAA_TARGET" || exit 1
+cat "$FAA_NEW" > "$FAA_STAGE" || { rm -f "$FAA_STAGE"; exit 1; }
+cmp -s "$FAA_NEW" "$FAA_STAGE" || { rm -f "$FAA_STAGE"; log_message "ERROR: Staged configuration mismatch"; exit 1; }
+mv "$FAA_STAGE" "$FAA_TARGET" || { rm -f "$FAA_STAGE"; exit 1; }
+rm -f "$FAA_NEW"
 sync
 log_message "=== Factory AA touchscreen preload installed; reboot required ==="
