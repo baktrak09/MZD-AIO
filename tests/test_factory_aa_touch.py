@@ -17,7 +17,7 @@ LIBRARY = TWEAKS / "factory-aa-touch/libmazda_touch.so"
 class FactoryTouchTests(unittest.TestCase):
     def test_payload_and_generator(self):
         self.assertTrue(LIBRARY.is_file())
-        self.assertEqual(LIBRARY.read_bytes()[:4], b"\\x7fELF")
+        self.assertEqual(LIBRARY.read_bytes()[:4], b"\x7fELF")
         generator = (ROOT / "app/assets/js/build-tweaks.js").read_text()
         for needle in ("options.includes(29)", "options.includes(129)",
                        "29_factoryaatouch-i.txt", "29_factoryaatouch-u.txt",
@@ -34,11 +34,11 @@ class FactoryTouchTests(unittest.TestCase):
             source = temp / "usb/config/factory-aa-touch"
             source.mkdir(parents=True)
             (source / "libmazda_touch.so").write_bytes(LIBRARY.read_bytes())
-            original = ('<service name="other" path="/x">\\n'
-                        '</service>\\n'
-                        '<service\\n name="jciAAPA" path="/jci/aapa/blmjciaapa.so">\\n'
-                        '  <environ_var env_name="EXISTING" env_value="yes"/>\\n'
-                        '</service>\\n')
+            original = ('<service name="other" path="/x">\n'
+                        '</service>\n'
+                        '<service\n name="jciAAPA" path="/jci/aapa/blmjciaapa.so">\n'
+                        '  <environ_var env_name="EXISTING" env_value="yes"/>\n'
+                        '</service>\n')
             target.write_text(original)
             def run(name, firmware="70.00.335C"):
                 code = (TWEAKS / name).read_text()
@@ -48,8 +48,8 @@ class FactoryTouchTests(unittest.TestCase):
                                     str(persist / "libmazda_touch.so"))
                 code = code.replace('FAA_SOURCE="${MYDIR}/config/factory-aa-touch/libmazda_touch.so"',
                                     'FAA_SOURCE="' + str(source / "libmazda_touch.so") + '"')
-                prelude = ('show_message() { :; }\\nlog_message() { :; }\\n'
-                           "get_cmu_sw_version() { echo '" + firmware + "'; }\\n")
+                prelude = ('show_message() { :; }\nlog_message() { :; }\n'
+                           "get_cmu_sw_version() { echo '" + firmware + "'; }\n")
                 return subprocess.run(["sh", "-c", prelude + code],
                                       capture_output=True, text=True)
             install = "29_factoryaatouch-i.txt"
