@@ -753,6 +753,14 @@
       $scope.startCompile = function () {
         bootbox.hideAll()
         closeHelpDrop()
+        if ($scope.user.options.includes(29) && $scope.user.options.includes(129)) {
+          bootbox.alert({ title: 'Factory Android Auto Touchscreen', message: 'Choose either Install or Uninstall, not both.' })
+          return
+        }
+        if ($scope.user.options.includes(29) && ($scope.user.options.includes(25) || $scope.user.options.includes(125))) {
+          bootbox.alert({ title: 'Factory Android Auto Touchscreen', message: 'Do not combine factory Android Auto touchscreen installation with the replacement Android Auto Headunit App installer or uninstaller.' })
+          return
+        }
         if ($('.ng-invalid').length > 0) {
           bootbox.alert({
             title: '<center>Error</center>',
